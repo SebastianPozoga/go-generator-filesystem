@@ -1,0 +1,15 @@
+# patterns
+npm-debug.log
+*.test
+*.prof
+*~
+.vscode
+.DS_Store
+
+# vendors
+/vendor
+
+# security (very important)
+to
+from
+go-generator-filesystem
