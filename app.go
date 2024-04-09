@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"mime"
+	"net/http"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -56,12 +59,18 @@ func (app *App) Run() error {
 		},
 		OnFile: func(fs filesystem.Filespace, subPath string) error {
 			var (
-				err      error
-				bytes    []byte
-				filename = toCamelCase(filepath.Base(subPath), true)
-				dirname  = toUnderscore(filepath.Base(filepath.Dir(subPath)))
+				err         error
+				bytes       []byte
+				checksum    []byte
+				filename    = toCamelCase(filepath.Base(subPath), true)
+				dirname     = toUnderscore(filepath.Base(filepath.Dir(subPath)))
+				lstat       os.FileInfo
+				contentType string
 			)
 			if bytes, err = fs.ReadFile(subPath); err != nil {
+				panic(err)
+			}
+			if checksum, err = calculateChecksum(bytes); err != nil {
 				panic(err)
 			}
 			if dirname == "" {
@@ -70,10 +79,20 @@ func (app *App) Run() error {
 			if dirname == "" {
 				dirname = "fs"
 			}
+			if lstat, err = fs.Lstat(subPath); err != nil {
+				panic(err)
+			}
+			contentType = mime.TypeByExtension(filepath.Ext(subPath))
+			if contentType == "" {
+				contentType = http.DetectContentType(bytes)
+			}
 			file := &GOBinaryFile{
-				Bytes:   bytes,
-				Package: dirname,
-				Name:    filename,
+				Bytes:       bytes,
+				Checksum:    checksum,
+				Package:     dirname,
+				Name:        filename,
+				ModTime:     lstat.ModTime(),
+				ContentType: contentType,
 			}
 			firstLetter, _ := utf8.DecodeRuneInString(file.Package)
 			if !unicode.IsLetter(firstLetter) {

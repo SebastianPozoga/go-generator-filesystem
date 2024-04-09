@@ -62,8 +62,8 @@ func TestApp(t *testing.T) {
 		t.Errorf("Expected package named 'package to'")
 		return
 	}
-	if strings.HasPrefix(result, "[]byte{60, 61, 62, 63, 64}") {
-		t.Errorf("Expected file binaries []byte{60, 61, 62, 63, 64}")
+	if !strings.Contains(result, "[]byte{49, 50, 51, 52, 53}") {
+		t.Errorf("Expected file binaries []byte{49, 50, 51, 52, 53}")
 		return
 	}
 }

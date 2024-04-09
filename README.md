@@ -10,7 +10,8 @@ File Conversion: Convert both text and binary files into byte arrays.
 Go Integration: Seamless integration with Go code, allowing for easy referencing of files.
 Efficient Access: Avoids the need to read files from the file system at runtime, enhancing performance in certain scenarios.
 Simplified Deployment: Eliminates the necessity of deploying separate files alongside the application executable, as the file contents are embedded within the code.
-How It Works
+
+## How It Works
 
 The go-generator-filesystem tool works by taking input files and generating Go code containing byte array representations of these files. This generated code can then be included in Go projects, allowing direct access to the file contents without requiring file I/O operations.
 
@@ -36,9 +37,14 @@ import (
 
 func main() {
     // Accessing the contents of the example.txt file
-    fmt.Println(string(staticdata.ExampleTxt))
+    fmt.Println(string(staticdata.ExampleTxt.Data))
 }
 ```
+
+``` bash
+./go-generator-filesystem --from=fromdirectory --to=staticdata
+```
+
 
 ## Contribution
 

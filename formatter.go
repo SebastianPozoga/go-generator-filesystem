@@ -1,25 +1,52 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"strings"
+	"time"
 )
 
 type GOBinaryFile struct {
-	Bytes   []byte
-	Package string
-	Name    string
+	Bytes       []byte
+	Checksum    []byte
+	Package     string
+	Name        string
+	ContentType string
+	ModTime     time.Time
 }
 
 func (f *GOBinaryFile) String() string {
-	var buffer bytes.Buffer
-	buffer.WriteString("package " + f.Package + "\n\nvar " + f.Name + " []byte = []byte{")
-	for i := 0; i < len(f.Bytes); i++ {
-		buffer.WriteString(fmt.Sprintf("%d", f.Bytes[i]))
-		if i < len(f.Bytes)-1 {
-			buffer.WriteString(", ")
+	var (
+		builder strings.Builder
+	)
+	builder.WriteString("package " + f.Package + "\n\nimport \"time\"\n\nvar " + f.Name + " = struct{")
+	builder.WriteString("\n\tChecksum []byte")
+	builder.WriteString("\n\tData []byte")
+	builder.WriteString("\n\tContentType string")
+	builder.WriteString("\n\tModTime time.Time")
+	builder.WriteString("\n}{\n\t")
+	byteArray(&builder, []byte(f.Checksum))
+	builder.WriteString(",\n\t")
+	byteArray(&builder, f.Bytes)
+	builder.WriteString(",\n\t\"")
+	builder.WriteString(f.ContentType)
+	builder.WriteString("\",\n\t")
+	builder.WriteString(formatTime(f.ModTime))
+	builder.WriteString(",\n}")
+	return builder.String()
+}
+
+func byteArray(builder *strings.Builder, bytes []byte) {
+	builder.WriteString("[]byte{")
+	for i := 0; i < len(bytes); i++ {
+		builder.WriteString(fmt.Sprintf("%d", bytes[i]))
+		if i < len(bytes)-1 {
+			builder.WriteString(", ")
 		}
 	}
-	buffer.WriteString("}\n")
-	return buffer.String()
+	builder.WriteString("}")
+}
+
+func formatTime(t time.Time) string {
+	return fmt.Sprintf("time.Date(%d, time.Month(%d), %d, %d, %d, %d, %d, nil)", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond())
 }
