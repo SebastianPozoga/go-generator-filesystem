@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/SebastianPozoga/go-generator-filesystem/cache"
 	"github.com/goatcms/goatcore/filesystem"
 	"github.com/goatcms/goatcore/filesystem/filespace/diskfs"
 	"github.com/goatcms/goatcore/filesystem/fsloop"
@@ -19,8 +19,9 @@ import (
 
 // App is main application object. Contains all app data
 type App struct {
-	From, To         string
-	FS, FromFS, ToFS filesystem.Filespace
+	From, To, Cache           string
+	FS, FromFS, ToFS, CacheFS filesystem.Filespace
+	modTimes                  *cache.ModTimes
 }
 
 func (app *App) Valid() {
@@ -46,20 +47,62 @@ func (app *App) InitFS() {
 	if err = app.ToFS.MkdirAll(".", filesystem.DefaultUnixDirMode); err != nil {
 		panic(err)
 	}
+	if app.Cache != "" {
+		if app.CacheFS, err = diskfs.NewFilespace(app.Cache); err != nil {
+			panic(err)
+		}
+		if err = app.CacheFS.MkdirAll(".", filesystem.DefaultUnixDirMode); err != nil {
+			panic(err)
+		}
+	}
 }
 
-func (app *App) Run() error {
+func (app *App) readModTimes() (err error) {
+	var reader filesystem.Reader
+	app.modTimes = cache.NewModTimes()
+	if app.CacheFS == nil || !app.CacheFS.IsFile(CacheModPath) {
+		return
+	}
+	if reader, err = app.CacheFS.Reader(CacheModPath); err != nil {
+		return
+	}
+	defer reader.Close()
+	err = app.modTimes.Read(reader)
+	return
+}
+
+func (app *App) persistModTimes() (err error) {
+	var writer filesystem.Writer
+	if app.CacheFS == nil {
+		return
+	}
+	app.CacheFS.Remove(CacheModPath)
+	if writer, err = app.CacheFS.Writer(CacheModPath); err != nil {
+		return
+	}
+	defer writer.Close()
+	err = app.modTimes.Write(writer)
+	return
+}
+
+func (app *App) Run() (err error) {
+	if err = app.readModTimes(); err != nil {
+		return
+	}
 	loop := fsloop.NewLoop(&fsloop.LoopData{
 		Filespace: app.FromFS,
-		DirFilter: func(fs filesystem.Filespace, subPath string) bool {
-			return strings.HasSuffix(subPath, ".ex")
-		},
 		OnDir: func(fs filesystem.Filespace, subPath string) error {
 			return fs.MkdirAll(subPath, filesystem.DefaultUnixDirMode)
 		},
-		OnFile: func(fs filesystem.Filespace, subPath string) error {
+		FileFilter: func(fs filesystem.Filespace, subPath string) (modified bool) {
+			modified = app.modTimes.IsFileModified(fs, subPath)
+			if !modified {
+				fmt.Printf("\n [no modified] %s", subPath)
+			}
+			return
+		},
+		OnFile: func(fs filesystem.Filespace, subPath string) (err error) {
 			var (
-				err         error
 				bytes       []byte
 				checksum    []byte
 				filename    = toCamelCase(filepath.Base(subPath), true)
@@ -79,12 +122,12 @@ func (app *App) Run() error {
 			if dirname == "" {
 				dirname = "fs"
 			}
-			if lstat, err = fs.Lstat(subPath); err != nil {
-				panic(err)
-			}
 			contentType = mime.TypeByExtension(filepath.Ext(subPath))
 			if contentType == "" {
 				contentType = http.DetectContentType(bytes)
+			}
+			if lstat, err = fs.Lstat(subPath); err != nil {
+				panic(err)
 			}
 			file := &GOBinaryFile{
 				Bytes:       bytes,
@@ -103,12 +146,25 @@ func (app *App) Run() error {
 				panic(fmt.Sprintf("Function name must start from letter - your file name is not start from letter (%s)", subPath))
 			}
 			result := file.String()
-			return app.ToFS.WriteFile(subPath+".go", []byte(result), filesystem.DefaultUnixFileMode)
+			destPath := subPath + ".go"
+			if err = app.ToFS.WriteFile(destPath, []byte(result), filesystem.DefaultUnixFileMode); err != nil {
+				panic(err)
+			}
+			app.modTimes.Add(cache.ModTime{
+				Path:    subPath,
+				ModTime: lstat.ModTime(),
+			})
+			fmt.Printf("\n [generated] %s", destPath)
+			return
 		},
 		Consumers:  runtime.NumCPU(),
 		Producents: 1,
 	}, nil)
 	loop.Run("./")
 	loop.Wait()
+	fmt.Println()
+	if err = app.persistModTimes(); err != nil {
+		return
+	}
 	return goaterr.ToError(loop.Errors())
 }

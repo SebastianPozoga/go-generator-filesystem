@@ -5,11 +5,10 @@ npm-debug.log
 *~
 .vscode
 .DS_Store
+__debug_bin
 
 # vendors
 /vendor
 
 # security (very important)
-to
-from
 go-generator-filesystem

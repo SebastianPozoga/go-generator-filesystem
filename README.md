@@ -42,8 +42,10 @@ func main() {
 ```
 
 ``` bash
-./go-generator-filesystem --from=fromdirectory --to=staticdata
+./go-generator-filesystem --from=example/from --to=example/to --cache=example/cache
 ```
+
+Find result in [example directory](https://github.com/SebastianPozoga/go-generator-filesystem/blob/main/example)
 
 
 ## Contribution
