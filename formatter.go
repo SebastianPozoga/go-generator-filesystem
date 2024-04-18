@@ -48,5 +48,5 @@ func byteArray(builder *strings.Builder, bytes []byte) {
 }
 
 func formatTime(t time.Time) string {
-	return fmt.Sprintf("time.Date(%d, time.Month(%d), %d, %d, %d, %d, %d, nil)", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond())
+	return fmt.Sprintf("time.Unix(%d, 0)", t.Unix())
 }
