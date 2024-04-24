@@ -19,7 +19,7 @@ func (f *GOBinaryFile) String() string {
 	var (
 		builder strings.Builder
 	)
-	builder.WriteString("package " + f.Package + "\n\nimport \"time\"\n\nvar " + f.Name + " = struct{")
+	builder.WriteString("package " + f.Package + "\n\nimport \"time\"\n\nvar File" + f.Name + " = struct{")
 	builder.WriteString("\n\tChecksum []byte")
 	builder.WriteString("\n\tData []byte")
 	builder.WriteString("\n\tContentType string")

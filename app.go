@@ -141,10 +141,6 @@ func (app *App) Run() (err error) {
 			if !unicode.IsLetter(firstLetter) {
 				panic(fmt.Sprintf("Package name must start from letter - your directory name is not start from letter (%s)", subPath))
 			}
-			firstLetter, _ = utf8.DecodeRuneInString(file.Name)
-			if !unicode.IsLetter(firstLetter) {
-				panic(fmt.Sprintf("Function name must start from letter - your file name is not start from letter (%s)", subPath))
-			}
 			result := file.String()
 			destPath := subPath + ".go"
 			if err = app.ToFS.WriteFile(destPath, []byte(result), filesystem.DefaultUnixFileMode); err != nil {
