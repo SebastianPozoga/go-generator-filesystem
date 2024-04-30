@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/goatcms/goatcore/filesystem"
@@ -20,7 +19,6 @@ type ModTime struct {
 
 type ModTimes struct {
 	Map map[string]ModTime
-	mu  sync.Mutex
 }
 
 func NewModTimes() *ModTimes {
@@ -68,26 +66,48 @@ func (md *ModTimes) Write(file io.Writer) (err error) {
 }
 
 func (md *ModTimes) Add(row ModTime) {
-	md.mu.Lock()
-	defer md.mu.Unlock()
 	md.Map[row.Path] = row
 }
 
+func (md *ModTimes) Remove(path string) {
+	delete(md.Map, path)
+}
+
+func (md *ModTimes) Copy() (copied *ModTimes) {
+	copied = &ModTimes{
+		Map: make(map[string]ModTime, len(md.Map)),
+	}
+	for k, v := range md.Map {
+		copied.Map[k] = v
+	}
+	return
+}
+
+func (md *ModTimes) Join(row *ModTimes) {
+	for k, v := range row.Map {
+		md.Map[k] = v
+	}
+}
+
+func (md *ModTimes) Except(second *ModTimes) {
+	for k := range second.Map {
+		delete(md.Map, k)
+	}
+}
+
 func (md *ModTimes) File(path string) (mt ModTime, ok bool) {
-	md.mu.Lock()
-	defer md.mu.Unlock()
 	mt, ok = md.Map[path]
 	return
 }
 
-func (md *ModTimes) IsFileModified(fs filesystem.Filespace, subPath string) bool {
+func (md *ModTimes) IsFileModified(fs filesystem.Filespace, subPath string) (modified, created bool) {
 	fileMT, ok := md.File(subPath)
 	if !ok {
-		return true
+		return false, true
 	}
 	info, err := fs.Lstat(subPath)
 	if err != nil {
-		return true
+		return true, false
 	}
-	return info.ModTime().Unix() != fileMT.ModTime.Unix()
+	return info.ModTime().Unix() != fileMT.ModTime.Unix(), false
 }

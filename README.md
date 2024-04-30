@@ -42,7 +42,7 @@ func main() {
 ```
 
 ``` bash
-./go-generator-filesystem --from=example/from --to=example/to --cache=example/cache
+./go-generator-filesystem --from=example/from --to=example/to --cache=example/cache  --package.prefix=github.com/user/repo/fs/public/
 ```
 
 Find result in [example directory](https://github.com/SebastianPozoga/go-generator-filesystem/blob/main/example)

@@ -1,25 +1,25 @@
-package main
+package goformatter
 
 import (
-	"fmt"
 	"strings"
 	"time"
+
+	"github.com/SebastianPozoga/go-generator-filesystem/names"
 )
 
-type GOBinaryFile struct {
+type BinaryFile struct {
+	Names       names.FileNames
 	Bytes       []byte
 	Checksum    []byte
-	Package     string
-	Name        string
 	ContentType string
 	ModTime     time.Time
 }
 
-func (f *GOBinaryFile) String() string {
+func (f *BinaryFile) String() string {
 	var (
 		builder strings.Builder
 	)
-	builder.WriteString("package " + f.Package + "\n\nimport \"time\"\n\nvar File" + f.Name + " = struct{")
+	builder.WriteString("package " + f.Names.DirNameU + "\n\nimport \"time\"\n\nvar " + f.Names.VarName + " = struct{")
 	builder.WriteString("\n\tChecksum []byte")
 	builder.WriteString("\n\tData []byte")
 	builder.WriteString("\n\tContentType string")
@@ -34,19 +34,4 @@ func (f *GOBinaryFile) String() string {
 	builder.WriteString(formatTime(f.ModTime))
 	builder.WriteString(",\n}")
 	return builder.String()
-}
-
-func byteArray(builder *strings.Builder, bytes []byte) {
-	builder.WriteString("[]byte{")
-	for i := 0; i < len(bytes); i++ {
-		builder.WriteString(fmt.Sprintf("%d", bytes[i]))
-		if i < len(bytes)-1 {
-			builder.WriteString(", ")
-		}
-	}
-	builder.WriteString("}")
-}
-
-func formatTime(t time.Time) string {
-	return fmt.Sprintf("time.Unix(%d, 0)", t.Unix())
 }

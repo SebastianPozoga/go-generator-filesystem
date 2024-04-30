@@ -118,7 +118,7 @@ func TestUpdateModTime(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if err = cacheFS.WriteFile(CacheModPath, []byte("./binaryfile.ex;1991-01-01T00:00:00Z"), filesystem.DefaultUnixFileMode); err != nil {
+	if err = cacheFS.WriteFile(CacheModPath, []byte("binaryfile.ex;1991-01-01T00:00:00Z"), filesystem.DefaultUnixFileMode); err != nil {
 		t.Error(err)
 		return
 	}
@@ -150,18 +150,18 @@ func TestUpdateModTime(t *testing.T) {
 		return
 	}
 	reader.Close()
-	if lstat, err = app.ToFS.Lstat("./binaryfile.ex.go"); err != nil {
+	if lstat, err = app.FromFS.Lstat("binaryfile.ex"); err != nil {
 		t.Error(err)
 		return
 	}
-	if modTimeRow, ok = resultModTimes.File("./binaryfile.ex"); !ok {
-		t.Errorf("Expected ./binaryfile.ex")
+	if modTimeRow, ok = resultModTimes.File("binaryfile.ex"); !ok {
+		t.Errorf("Expected binaryfile.ex")
 		return
 	}
 	if modTimeRow.ModTime.Unix() != lstat.ModTime().Unix() {
 		var bytes []byte
 		bytes, _ = cacheFS.ReadFile(CacheModPath)
-		t.Errorf("Expected mod time from cache and mod time of file ./binaryfile.ex be equal. \n%s time from: %s\n modification time of file ./binaryfile.ex: %s\n %s file:\n%s",
+		t.Errorf("Expected mod time from cache and mod time of file binaryfile.ex be equal. \n%s time from: %s\n modification time of file ./binaryfile.ex: %s\n %s file:\n%s",
 			CacheModPath,
 			modTimeRow.ModTime.Format(time.RFC3339),
 			lstat.ModTime().Format(time.RFC3339),
