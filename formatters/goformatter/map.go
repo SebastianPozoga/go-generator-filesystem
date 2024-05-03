@@ -54,12 +54,13 @@ func (f *MapFile) Write(w io.Writer) {
 		io.WriteString(w, "\"")
 	}
 	io.WriteString(w, "\n)")
-	io.WriteString(w, "\n\nvar "+f.VarName+" = map[string]struct{")
+	io.WriteString(w, "\n\ntype "+f.VarName+"Type struct {")
 	io.WriteString(w, "\n\tChecksum []byte")
 	io.WriteString(w, "\n\tData []byte")
 	io.WriteString(w, "\n\tContentType string")
 	io.WriteString(w, "\n\tModTime time.Time")
-	io.WriteString(w, "\n}{")
+	io.WriteString(w, "\n}")
+	io.WriteString(w, "\n\nvar "+f.VarName+" = map[string]"+f.VarName+"Type {")
 	for _, row := range f.Rows {
 		if row.Names.DirPath == "." {
 			io.WriteString(w, fmt.Sprintf("\n\t\"%s\": %s,", row.Names.Path, row.Names.VarName))
