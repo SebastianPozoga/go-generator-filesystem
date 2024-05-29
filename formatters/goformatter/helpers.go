@@ -2,19 +2,19 @@ package goformatter
 
 import (
 	"fmt"
-	"strings"
+	"io"
 	"time"
 )
 
-func byteArray(builder *strings.Builder, bytes []byte) {
-	builder.WriteString("[]byte{")
+func byteArray(w io.Writer, bytes []byte) {
+	io.WriteString(w, "[]byte{")
 	for i := 0; i < len(bytes); i++ {
-		builder.WriteString(fmt.Sprintf("%d", bytes[i]))
+		io.WriteString(w, fmt.Sprintf("%d", bytes[i]))
 		if i < len(bytes)-1 {
-			builder.WriteString(", ")
+			io.WriteString(w, ", ")
 		}
 	}
-	builder.WriteString("}")
+	io.WriteString(w, "}")
 }
 
 func formatTime(t time.Time) string {

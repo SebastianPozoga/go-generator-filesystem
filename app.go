@@ -148,7 +148,8 @@ func (app *App) readDir(result processFileRow, dirPath string, changedFileChan c
 				fmt.Printf("\n [no modified] %s", fileNames.Path)
 				result.modTimes.Add(app.modTimes.Map[fileNames.Path])
 				result.mapFile.Add(goformatter.MapFileRow{
-					Names: fileNames,
+					Names:   fileNames,
+					ModTime: app.modTimes.Map[fileNames.Path].ModTime,
 				})
 				continue
 			}
@@ -210,10 +211,11 @@ func (app *App) processFile(changedFileChan chan names.FileNames, out chan proce
 		}
 		modTimes.Add(cache.ModTime{
 			Path:    names.Path,
-			ModTime: lstat.ModTime(),
+			ModTime: file.ModTime,
 		})
 		mapFile.Add(goformatter.MapFileRow{
-			Names: names,
+			Names:   names,
+			ModTime: file.ModTime,
 		})
 		fmt.Printf("\n [generated] %s", destPath)
 	}

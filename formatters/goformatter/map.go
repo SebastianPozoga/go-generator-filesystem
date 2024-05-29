@@ -1,15 +1,19 @@
 package goformatter
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/SebastianPozoga/go-generator-filesystem/names"
 )
 
 type MapFileRow struct {
-	Names names.FileNames
+	Names   names.FileNames
+	ModTime time.Time
 }
 
 type MapFile struct {
@@ -38,7 +42,33 @@ func (f *MapFile) Add(row MapFileRow) {
 	f.Rows[row.Names.Path] = row
 }
 
+func (f *MapFile) checksum() (sum []byte, err error) {
+	var keys = make([]string, 0, len(f.Rows))
+	for key := range f.Rows {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	hash := sha256.New()
+	for _, key := range keys {
+		var bytes []byte
+		if bytes, err = f.Rows[key].ModTime.MarshalBinary(); err != nil {
+			return
+		}
+		if _, err = hash.Write(bytes); err != nil {
+			return
+		}
+	}
+	return hash.Sum(nil), nil
+}
+
 func (f *MapFile) Write(w io.Writer) {
+	var (
+		checksum []byte
+		err      error
+	)
+	if checksum, err = f.checksum(); err != nil {
+		panic(err)
+	}
 	io.WriteString(w, "package "+f.Package)
 	packages := map[string]string{}
 	for _, v := range f.Rows {
@@ -54,6 +84,8 @@ func (f *MapFile) Write(w io.Writer) {
 		io.WriteString(w, "\"")
 	}
 	io.WriteString(w, "\n)")
+	io.WriteString(w, "\nvar Checksum []byte = ")
+	byteArray(w, checksum)
 	io.WriteString(w, "\n\ntype "+f.VarName+"Type struct {")
 	io.WriteString(w, "\n\tChecksum []byte")
 	io.WriteString(w, "\n\tData []byte")
