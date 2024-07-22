@@ -2,6 +2,7 @@ package names
 
 import (
 	"path/filepath"
+	"strings"
 )
 
 type FileNames struct {
@@ -16,10 +17,11 @@ type FileNames struct {
 
 func NewFileNames(path string, defaultDirName string) FileNames {
 	path = filepath.Clean(path)
+	path = strings.ReplaceAll(path, "\\", "/")
 	var (
 		filename    = filepath.Base(path)
 		filenameUCC = ToCamelCase(filename, true)
-		dirPath     = filepath.Dir(path)
+		dirPath     = strings.ReplaceAll(filepath.Dir(path), "\\", "/")
 		dirName     = filepath.Base(dirPath)
 		dirNameU    string
 	)
