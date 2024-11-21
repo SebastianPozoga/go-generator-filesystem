@@ -75,11 +75,12 @@ func (f *MapFile) Write(w io.Writer) {
 		if v.Names.DirPath == "." {
 			continue
 		}
-		packages[v.Names.DirPath] = v.Names.DirNameU
+		packages[v.Names.DirPath] = v.Names.HashDirPath
 	}
 	io.WriteString(w, "\n\nimport (\n\t\"time\"")
-	for path := range packages {
-		io.WriteString(w, "\n\t\""+f.PackagePrefix)
+	for path, name := range packages {
+		io.WriteString(w, "\n\t"+name)
+		io.WriteString(w, " \""+f.PackagePrefix)
 		io.WriteString(w, path)
 		io.WriteString(w, "\"")
 	}
@@ -98,7 +99,7 @@ func (f *MapFile) Write(w io.Writer) {
 			io.WriteString(w, fmt.Sprintf("\n\t\"%s\": %s,", row.Names.Path, row.Names.VarName))
 			continue
 		}
-		io.WriteString(w, fmt.Sprintf("\n\t\"%s\": %s.%s,", row.Names.Path, row.Names.DirNameU, row.Names.VarName))
+		io.WriteString(w, fmt.Sprintf("\n\t\"%s\": %s.%s,", row.Names.Path, row.Names.HashDirPath, row.Names.VarName))
 	}
 	io.WriteString(w, "\n}\n")
 }
