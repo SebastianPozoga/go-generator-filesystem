@@ -127,7 +127,7 @@ func (app *App) readDir(result processFileRow, dirPath string, changedFileChan c
 		return
 	}
 	for _, node := range infos {
-		if node.Name() == "." || node.Name() == ".." || node.Name() == ".DsStore" {
+		if node.Name() == "." || node.Name() == ".." || node.Name() == ".DS_Store" {
 			continue
 		}
 		nodePath := basePath + node.Name()
