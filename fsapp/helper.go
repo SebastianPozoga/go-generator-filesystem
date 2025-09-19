@@ -1,4 +1,4 @@
-package main
+package fsapp
 
 import (
 	"crypto/sha256"

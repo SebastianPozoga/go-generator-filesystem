@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+
+	"github.com/SebastianPozoga/go-generator-filesystem/fsapp"
 )
 
 func main() {
-	var app = &App{}
+	var app = &fsapp.App{}
 	flag.StringVar(&app.From, "from", "", "directory or file to convert from")
 	flag.StringVar(&app.To, "to", "", "destination directory or file")
 	flag.StringVar(&app.Cache, "cache", "", "destination directory for cache data")
