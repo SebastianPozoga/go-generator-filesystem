@@ -164,3 +164,58 @@ func TestAppIgnoresDirsAndFiles(t *testing.T) {
 		return
 	}
 }
+
+func TestAppGeneratesHiddenFiles(t *testing.T) {
+	var (
+		fs, fromFS, toFS filesystem.Filespace
+		resultBytes      []byte
+		err              error
+	)
+	if fs, err = memfs.NewFilespace(); err != nil {
+		t.Error(err)
+		return
+	}
+	if err = fs.MkdirAll("./from", filesystem.DefaultUnixDirMode); err != nil {
+		t.Error(err)
+		return
+	}
+	if err = fs.MkdirAll("./to", filesystem.DefaultUnixDirMode); err != nil {
+		t.Error(err)
+		return
+	}
+	if err = fs.WriteFile("./from/.gitignore", []byte("node_modules\n"), filesystem.DefaultUnixFileMode); err != nil {
+		t.Error(err)
+		return
+	}
+	if fromFS, err = fs.Filespace("./from"); err != nil {
+		t.Error(err)
+		return
+	}
+	if toFS, err = fs.Filespace("./to"); err != nil {
+		t.Error(err)
+		return
+	}
+	var app = &App{
+		From:   "./from",
+		To:     "./to",
+		FromFS: fromFS,
+		ToFS:   toFS,
+	}
+	if err = app.Run(); err != nil {
+		t.Error(err)
+		return
+	}
+	if !toFS.IsFile("gitignore.go") {
+		t.Errorf("Expected hidden file to be generated as gitignore.go")
+		return
+	}
+	if resultBytes, err = toFS.ReadFile("main.go"); err != nil {
+		t.Error(err)
+		return
+	}
+	result := string(resultBytes)
+	if !strings.Contains(result, "\".gitignore\": FileGitignore") {
+		t.Errorf("Expected map to reference FileGitignore for .gitignore, got:\n%s", result)
+		return
+	}
+}

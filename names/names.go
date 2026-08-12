@@ -45,6 +45,17 @@ func NewFileNames(path string, defaultDirName string) FileNames {
 	}
 }
 
+func (f FileNames) GeneratedFilePath() string {
+	filename := strings.TrimLeft(f.FileName, ".")
+	if filename == "" {
+		filename = "file"
+	}
+	if f.DirPath == "." || f.DirPath == "" {
+		return filename + ".go"
+	}
+	return f.DirPath + "/" + filename + ".go"
+}
+
 // hash create a new MD5 hash
 func hash(input string) string {
 	hash := md5.New()

@@ -47,3 +47,22 @@ func TestToUnderscore(t *testing.T) {
 		}
 	}
 }
+
+func TestGeneratedFilePath(t *testing.T) {
+	testCases := []struct {
+		path        string
+		defaultDir  string
+		expectedOut string
+	}{
+		{".gitignore", "fs", "gitignore.go"},
+		{"nested/.gitignore", "fs", "nested/gitignore.go"},
+		{"binaryfile.ex", "fs", "binaryfile.ex.go"},
+		{"nested/file.txt", "fs", "nested/file.txt.go"},
+	}
+	for _, tc := range testCases {
+		result := NewFileNames(tc.path, tc.defaultDir).GeneratedFilePath()
+		if result != tc.expectedOut {
+			t.Errorf("Path: %s, Expected: %s, Got: %s", tc.path, tc.expectedOut, result)
+		}
+	}
+}

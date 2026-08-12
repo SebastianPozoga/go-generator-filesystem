@@ -266,7 +266,7 @@ func (app *App) processFile(changedFileChan chan names.FileNames, out chan proce
 			ContentType: contentType,
 		}
 		result := file.String()
-		destPath := names.Path + ".go"
+		destPath := names.GeneratedFilePath()
 		if err = app.ToFS.WriteFile(destPath, []byte(result), filesystem.DefaultUnixFileMode); err != nil {
 			panic(err)
 		}
@@ -323,7 +323,7 @@ func (app *App) Run() (err error) {
 
 	// remove all files created for removed nodes
 	for path := range removed.Map {
-		removedFilePath := path + ".go"
+		removedFilePath := names.NewFileNames(path, defaultDirName).GeneratedFilePath()
 		app.ToFS.Remove(removedFilePath)
 		fmt.Printf("\n [removed] %s", removedFilePath)
 	}
