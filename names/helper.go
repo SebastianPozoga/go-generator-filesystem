@@ -34,12 +34,15 @@ func ToUnderscore(s string) string {
 	var isNewWord = false
 	for _, char := range s {
 		if isNameSeparator(char) {
-			isNewWord = true
+			if name.Len() > 0 {
+				isNewWord = true
+			}
 		} else {
-			if isNewWord {
+			if isNewWord && name.Len() > 0 {
 				isNewWord = false
 				name.WriteRune('_')
 			}
+			isNewWord = false
 			name.WriteRune(unicode.ToLower(char))
 		}
 	}

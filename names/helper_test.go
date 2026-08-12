@@ -39,6 +39,7 @@ func TestToUnderscore(t *testing.T) {
 		{"one!two_three4five", "one_two_three4five"},
 		{"Camel-Case-Test", "camel_case_test"},
 		{"ABC_def_GHI", "abc_def_ghi"},
+		{".bin", "bin"},
 	}
 	for _, tc := range testCases {
 		result := ToUnderscore(tc.input)

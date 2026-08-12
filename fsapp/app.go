@@ -241,9 +241,9 @@ func (app *App) processFile(changedFileChan chan names.FileNames, out chan proce
 			lstat       os.FileInfo
 			contentType string
 		)
-		firstLetter, _ := utf8.DecodeRuneInString(names.DirName)
+		firstLetter, _ := utf8.DecodeRuneInString(names.DirNameU)
 		if !unicode.IsLetter(firstLetter) {
-			panic(fmt.Sprintf("Package name must start from letter - your directory name is not start from letter (%s): %s", names.DirName, names.Path))
+			panic(fmt.Sprintf("Package name must start from letter - your directory name is not start from letter (%s => %s): %s", names.DirName, names.DirNameU, names.Path))
 		}
 		if bytes, err = app.FromFS.ReadFile(names.Path); err != nil {
 			panic(err)

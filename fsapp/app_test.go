@@ -219,3 +219,58 @@ func TestAppGeneratesHiddenFiles(t *testing.T) {
 		return
 	}
 }
+
+func TestAppGeneratesFilesFromHiddenDirectories(t *testing.T) {
+	var (
+		fs, fromFS, toFS filesystem.Filespace
+		resultBytes      []byte
+		err              error
+	)
+	if fs, err = memfs.NewFilespace(); err != nil {
+		t.Error(err)
+		return
+	}
+	if err = fs.MkdirAll("./from/web/node_modules/.bin", filesystem.DefaultUnixDirMode); err != nil {
+		t.Error(err)
+		return
+	}
+	if err = fs.MkdirAll("./to", filesystem.DefaultUnixDirMode); err != nil {
+		t.Error(err)
+		return
+	}
+	if err = fs.WriteFile("./from/web/node_modules/.bin/browserslist", []byte("12345"), filesystem.DefaultUnixFileMode); err != nil {
+		t.Error(err)
+		return
+	}
+	if fromFS, err = fs.Filespace("./from"); err != nil {
+		t.Error(err)
+		return
+	}
+	if toFS, err = fs.Filespace("./to"); err != nil {
+		t.Error(err)
+		return
+	}
+	var app = &App{
+		From:   "./from",
+		To:     "./to",
+		FromFS: fromFS,
+		ToFS:   toFS,
+	}
+	if err = app.Run(); err != nil {
+		t.Error(err)
+		return
+	}
+	if !toFS.IsFile("web/node_modules/.bin/browserslist.go") {
+		t.Errorf("Expected hidden directory file to be generated")
+		return
+	}
+	if resultBytes, err = toFS.ReadFile("web/node_modules/.bin/browserslist.go"); err != nil {
+		t.Error(err)
+		return
+	}
+	result := string(resultBytes)
+	if !strings.HasPrefix(result, "package bin") {
+		t.Errorf("Expected package named 'package bin', got:\n%s", result)
+		return
+	}
+}
