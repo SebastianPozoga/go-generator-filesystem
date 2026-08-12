@@ -51,6 +51,16 @@ func main() {
 go-generator-filesystem --from=example/from --to=example/to --cache=example/cache  --package.prefix=github.com/user/repo/fs/public/
 ```
 
+To skip directories or files, use `--ignore.dirs` and `--ignore.files`. Both flags accept a comma-separated list and can also be repeated.
+
+```bash
+go-generator-filesystem \
+  --from=example/from \
+  --to=example/to \
+  --ignore.dirs=node_modules,dist \
+  --ignore.files=.DS_Store,assets/private.txt
+```
+
 Find result in [example directory](https://github.com/SebastianPozoga/go-generator-filesystem/blob/main/example)
 
 

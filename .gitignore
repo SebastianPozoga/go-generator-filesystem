@@ -12,3 +12,6 @@ __debug_bin
 
 # security (very important)
 go-generator-filesystem
+
+# local build cache
+.tmp-gocache/

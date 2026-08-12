@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -30,7 +31,11 @@ type App struct {
 	From, To, Cache           string
 	FS, FromFS, ToFS, CacheFS filesystem.Filespace
 	LogAll                    bool
+	IgnoredDirs               []string
+	IgnoredFiles              []string
 	modTimes                  *cache.ModTimes
+	ignoredDirSet             map[string]struct{}
+	ignoredFileSet            map[string]struct{}
 
 	// errorsMu sync.Mutex
 	errors []error
@@ -51,6 +56,54 @@ func (app *App) ExLog(msg string, args ...any) {
 	if app.LogAll {
 		fmt.Printf(msg, args...)
 	}
+}
+
+func normalizePath(value string) string {
+	value = strings.TrimSpace(value)
+	value = strings.ReplaceAll(value, "\\", "/")
+	value = strings.TrimPrefix(value, "./")
+	return strings.Trim(filepath.Clean(value), "/")
+}
+
+func toLookupSet(values []string) map[string]struct{} {
+	result := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		normalized := normalizePath(value)
+		if normalized == "" || normalized == "." {
+			continue
+		}
+		result[normalized] = struct{}{}
+	}
+	return result
+}
+
+func (app *App) initIgnores() {
+	app.ignoredDirSet = toLookupSet(app.IgnoredDirs)
+	app.ignoredFileSet = toLookupSet(app.IgnoredFiles)
+}
+
+func (app *App) shouldIgnoreDir(path string) bool {
+	normalized := normalizePath(path)
+	if normalized == "" {
+		return false
+	}
+	if _, ok := app.ignoredDirSet[normalized]; ok {
+		return true
+	}
+	_, ok := app.ignoredDirSet[filepath.Base(normalized)]
+	return ok
+}
+
+func (app *App) shouldIgnoreFile(path string) bool {
+	normalized := normalizePath(path)
+	if normalized == "" {
+		return false
+	}
+	if _, ok := app.ignoredFileSet[normalized]; ok {
+		return true
+	}
+	_, ok := app.ignoredFileSet[filepath.Base(normalized)]
+	return ok
 }
 
 func (app *App) InitFS() {
@@ -132,9 +185,17 @@ func (app *App) readDir(result processFileRow, dirPath string, changedFileChan c
 		}
 		nodePath := basePath + node.Name()
 		if node.IsDir() {
+			if app.shouldIgnoreDir(nodePath) {
+				app.ExLog("\n [ignored dir] %s", nodePath)
+				continue
+			}
 			app.ToFS.MkdirAll(nodePath, filesystem.DefaultUnixDirMode)
 			app.readDir(result, nodePath, changedFileChan)
 		} else {
+			if app.shouldIgnoreFile(nodePath) {
+				app.ExLog("\n [ignored file] %s", nodePath)
+				continue
+			}
 			fileNames := names.NewFileNames(nodePath, defaultDirName)
 			modified, creted := app.modTimes.IsFileModified(app.FromFS, fileNames.Path)
 			app.isModified = app.isModified || modified
@@ -235,6 +296,7 @@ func (app *App) Run() (err error) {
 		modTimes: cache.NewModTimes(),
 		mapFile:  goformatter.NewMapFile(app.PackagePrefix, defaultDirName, "FilesMap"),
 	}
+	app.initIgnores()
 	if err = app.readModTimes(); err != nil {
 		return
 	}
