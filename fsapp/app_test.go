@@ -62,8 +62,20 @@ func TestApp(t *testing.T) {
 		t.Errorf("Expected package named 'package to'")
 		return
 	}
-	if !strings.Contains(result, "[]byte{49, 50, 51, 52, 53}") {
-		t.Errorf("Expected file binaries []byte{49, 50, 51, 52, 53}")
+	if !strings.Contains(result, "//go:embed binaryfile.ex") {
+		t.Errorf("Expected //go:embed directive for binaryfile.ex, got:\n%s", result)
+		return
+	}
+	if !toFS.IsFile("binaryfile.ex") {
+		t.Errorf("Expected raw asset binaryfile.ex to be written alongside the generated wrapper")
+		return
+	}
+	if resultBytes, err = toFS.ReadFile("binaryfile.ex"); err != nil {
+		t.Error(err)
+		return
+	}
+	if string(resultBytes) != "12345" {
+		t.Errorf("Expected raw asset content to be untouched, got: %q", string(resultBytes))
 		return
 	}
 }
@@ -209,6 +221,10 @@ func TestAppGeneratesHiddenFiles(t *testing.T) {
 		t.Errorf("Expected hidden file to be generated as gitignore.go")
 		return
 	}
+	if !toFS.IsFile(".gitignore") {
+		t.Errorf("Expected raw asset to be written at its original hidden path .gitignore")
+		return
+	}
 	if resultBytes, err = toFS.ReadFile("main.go"); err != nil {
 		t.Error(err)
 		return
@@ -262,6 +278,10 @@ func TestAppGeneratesFilesFromHiddenDirectories(t *testing.T) {
 	}
 	if !toFS.IsFile("web/node_modules/.bin/browserslist.go") {
 		t.Errorf("Expected hidden directory file to be generated")
+		return
+	}
+	if !toFS.IsFile("web/node_modules/.bin/browserslist") {
+		t.Errorf("Expected raw asset to be written at its original hidden-directory path")
 		return
 	}
 	if resultBytes, err = toFS.ReadFile("web/node_modules/.bin/browserslist.go"); err != nil {

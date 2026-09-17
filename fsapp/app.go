@@ -267,6 +267,9 @@ func (app *App) processFile(changedFileChan chan names.FileNames, out chan proce
 		}
 		result := file.String()
 		destPath := names.GeneratedFilePath()
+		if err = app.ToFS.WriteFile(names.Path, bytes, filesystem.DefaultUnixFileMode); err != nil {
+			panic(err)
+		}
 		if err = app.ToFS.WriteFile(destPath, []byte(result), filesystem.DefaultUnixFileMode); err != nil {
 			panic(err)
 		}
@@ -325,6 +328,7 @@ func (app *App) Run() (err error) {
 	for path := range removed.Map {
 		removedFilePath := names.NewFileNames(path, defaultDirName).GeneratedFilePath()
 		app.ToFS.Remove(removedFilePath)
+		app.ToFS.Remove(path)
 		fmt.Printf("\n [removed] %s", removedFilePath)
 	}
 

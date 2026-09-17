@@ -75,8 +75,39 @@ func TestCachedApp(t *testing.T) {
 		t.Errorf("Expected package named 'package to'")
 		return
 	}
-	if !strings.Contains(result, "[]byte{49, 50, 51, 52, 53}") {
-		t.Errorf("Expected file binaries []byte{49, 50, 51, 52, 53}")
+	if !strings.Contains(result, "//go:embed binaryfile.ex") {
+		t.Errorf("Expected //go:embed directive for binaryfile.ex, got:\n%s", result)
+		return
+	}
+	if !toFS.IsFile("binaryfile.ex") {
+		t.Errorf("Expected raw asset binaryfile.ex to be written alongside the generated wrapper")
+		return
+	}
+
+	// Run again to exercise the "unmodified, skip regeneration" cache path and
+	// confirm the companion raw asset still survives untouched.
+	app2 := &App{
+		From:    "./from",
+		To:      "./to",
+		Cache:   "./cache",
+		FromFS:  fromFS,
+		ToFS:    toFS,
+		CacheFS: cacheFS,
+	}
+	if err = app2.Run(); err != nil {
+		t.Error(err)
+		return
+	}
+	if !toFS.IsFile("binaryfile.ex") {
+		t.Errorf("Expected raw asset binaryfile.ex to persist across a cached/unmodified run")
+		return
+	}
+	if resultBytes, err = toFS.ReadFile("binaryfile.ex"); err != nil {
+		t.Error(err)
+		return
+	}
+	if string(resultBytes) != "12345" {
+		t.Errorf("Expected raw asset content to be untouched, got: %q", string(resultBytes))
 		return
 	}
 }
